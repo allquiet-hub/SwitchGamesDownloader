@@ -19,6 +19,11 @@ class worker(QThread):
 
     def getVersion(self) -> str:
         version = os.popen('reg query "HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon" /v version').read()
+        if version == '':
+            version = os.popen('reg query "HKEY_CURRENT_USER\Software\Chromium\BLBeacon" /v version').read()
+        if version == '':
+            self.log.info("Chromedriver version not found, you need to install chrome or chromium")
+            return None
         version = version.replace(" ", "")
         start = version.find("REG_SZ")
         version = version.replace("REG_SZ", "")
@@ -30,6 +35,8 @@ class worker(QThread):
     def run(self) -> None:
         """Threaded function that downloads the correct version of ChromeDriver"""
         version = self.getVersion()
+        if version == None:
+            raise ValueError('chrome version not found, probably not installed')
         # Get raw html of chromedriver's page to give to bs4 for scraping
         r = requests.get("https://chromedriver.storage.googleapis.com/LATEST_RELEASE_" + version)
         soup = BeautifulSoup(r.content, 'html.parser')
